@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVREC Materials Hub - Study Material Sharing</title>
+    <!-- Favicon Link -->
+    <link rel="icon" type="image/jpeg" href="OIP.jpeg">
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Supabase CDN Import -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        /* --- PROFESSIONAL THEME STYLES OVERHAUL --- */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc; /* Lighter background for a cleaner feel (gray-50) */
+            transition: background-color 0.3s;
+        }
+
+        /* Card and Container Base Styles */
+        .card-shadow {
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05), 0 4px 6px -2px rgba(0, 0, 0, 0.03); /* Subtle, elevated shadow */
+            border: 1px solid #e2e8f0; /* Light border for definition */
+            transition: box-shadow 0.3s, transform 0.3s;
+        }
+        .card-shadow:hover {
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04); /* Deeper lift on hover */
+            transform: translateY(-2px);
+        }
+
+        /* Set solid white background for main content blocks */
+        header.bg-white, 
+        main .bg-white,
+        #controls-wrapper {
+            background-color: #ffffff; 
+        }
+
+        /* --- COLORS AND BUTTONS (Enhancing existing palette) --- */
+        /* Primary Indigo */
+        .bg-indigo-600 { background-color: #4f46e5; }
+        .hover\:bg-indigo-700:hover { background-color: #4338ca; }
+        /* Secondary Teal (for share/success) */
+        .bg-teal-600 { background-color: #0d9488; }
+        .hover\:bg-teal-700:hover { background-color: #0f766e; }
+
+        /* Active Tab indicator - Teal */
+        .active-view {
+            border-bottom: 3px solid #0d9488; /* Teal 600 */
+            color: #0d9488;
+            font-weight: 700; /* Bold active tab */
+        }
+        
+        /* Upvote button style */
+        .upvote-btn.voted {
+            background-color: #0d9488; /* Use primary teal color */
+            color: white;
+            box-shadow: 0 4px 6px rgba(13, 148, 136, 0.5);
+        }
+        .upvote-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        /* Search Highlight Style */
+        .highlight {
+            background-color: #fffb91; /* Bright yellow background */
+            padding: 1px 3px;
+            border-radius: 4px;
+            font-weight: 700;
+        }
+
+        /* --- MODAL STYLING --- */
+        #auth-modal {
+            background-image: url('svrec_new.png'); 
+            background-size: cover;
+            background-position: center;
+            background-attachment: fixed;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        #auth-modal::before {
+            content: "";
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7); /* Darker overlay for dramatic effect */
+            z-index: 10;
+        }
+        #auth-modal .modal {
+            background-color: #ffffff;
+            z-index: 20; 
+            border-radius: 12px;
+        }
+        
+        /* --- NOTIFICATION CONTAINER (FIXED POSITION) --- */
+        #notification-area {
+            position: fixed;
+            top: 0;
+            right: 0;
+            z-index: 1000; /* Ensure it's above all modals and content */
+            pointer-events: none; /* Allows clicks to pass through when empty */
+            padding: 1rem;
+            max-width: 90%;
+        }
+        #notification-area > div {
+             pointer-events: auto; /* Allow interaction with the notification itself */
+        }
+
+        /* Standard Scrollbar styles */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: #f1f1f1; }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="bg-gray-50 text-gray-800 antialiased">
+
+    <!-- Header (Optimized for Mobile) -->
+    <header class="bg-white shadow-xl sticky top-0 z-40">
+        <nav class="container mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <!-- COLLEGE LOGO -->
+                    <img id="college-logo" 
+                         src="OIP.jpeg" 
+                         alt="College Logo" 
+                         class="h-8 w-8 sm:h-9 sm:w-9 mr-2 rounded-full flex-shrink-0 border-2 border-indigo-500 shadow-md" 
+                         onerror="this.src='https://placehold.co/40x40/0d9488/ffffff?text=HUB'"> 
+                    
+                    <!-- COLLEGE NAME TEXT -->
+                    <span class="ml-1 text-xl sm:text-2xl font-extrabold text-gray-900 hidden sm:inline">
+                        <span id="college-full-name">SVREC Materials Hub</span>
+                    </span>
+                    <span class="ml-1 text-xl sm:text-2xl font-extrabold text-gray-900 sm:hidden">SVREC Materials Hub</span>
+                </div>
+                <!-- Auth Container with optimized spacing for mobile -->
+                <div id="auth-container" class="flex items-center space-x-2 sm:space-x-4">
+                    <!-- Auth buttons or user profile will be here -->
+                </div>
+            </div>
+        </nav>
+    </header>
+
+
+    <!-- Notification Area (New Fixed Container) -->
+    <div id="notification-area"></div>
+
+    <!-- Main Content -->
+    <main class="container mx-auto p-4 sm:p-6 lg:p-8">
+        
+        <!-- View Tabs (Responsive Padding) -->
+        <div class="flex space-x-4 mb-6 border-b border-gray-200 overflow-x-auto whitespace-nowrap bg-white rounded-t-xl px-4 pt-4 sm:px-6">
+            <button id="view-all-btn" class="py-2 px-2 sm:px-4 text-sm sm:text-lg font-medium text-gray-600 hover:text-teal-600 transition active-view" aria-label="View all shared materials">
+                All Materials
+            </button>
+            <button id="view-my-uploads-btn" class="py-2 px-2 sm:px-4 text-sm sm:text-lg font-medium text-gray-600 hover:text-teal-600 transition hidden" aria-label="View only my uploaded materials">
+                My Uploads
+            </button>
+        </div>
+
+        <div class="bg-white p-6 rounded-b-xl shadow-lg mb-8 card-shadow">
+            <h1 id="main-title" class="text-3xl sm:text-4xl font-black text-gray-900 tracking-tight">Shared Study Materials</h1>
+            <p id="main-subtitle" class="text-md sm:text-lg text-gray-600 mt-2">Find and share notes, PDFs, and high-quality resources using publicly shared links (100% Free).</p>
+        </div>
+
+        <!-- Controls: Filters, Search, and Upload Button (Fully Responsive Grid) -->
+        <div id="controls-wrapper" class="bg-white p-4 sm:p-6 rounded-xl shadow-lg mb-8 card-shadow">
+            <h2 class="text-2xl font-bold text-gray-900 mb-4 border-b pb-3 border-gray-100">Find Materials</h2>
+            
+            <div id="controls" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-12 gap-4 items-end">
+                
+                <!-- Search Input and Button (Full Width on Mobile) -->
+                <div class="lg:col-span-5 flex space-x-2 w-full">
+                     <label for="search-input" class="sr-only">Search materials</label>
+                     <input type="text" id="search-input" placeholder="Search by subject, file name..." 
+                            class="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm" aria-label="Search materials">
+                     <button id="search-button" class="flex-shrink-0 bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 transition" aria-label="Perform search">
+                         <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                           <path stroke-linecap="round" stroke-linejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                         </svg>
+                     </button>
+                </div>
+                
+                <!-- Filters and Sort (Stacking on mobile, side-by-side on sm+) -->
+                <div class="sm:col-span-1 lg:col-span-2 w-full">
+                     <select id="branch-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm" aria-label="Filter by branch">
+                         <option value="">Branch</option>
+                         <option value="CSE">Computer Science</option>
+                         <option value="CSE[AI]">Computer Science [AI]</option>
+                         <option value="CSE[DS]">Computer Science [DS]</option>
+                         <option value="ECE">Electronics & Communication</option>
+                         <option value="ME">Mechanical</option>
+                         <option value="CE">Civil</option>
+                         <option value="EEE">Electrical & Electronics</option>
+                     </select>
+                </div>
+                <div class="sm:col-span-1 lg:col-span-2 w-full">
+                     <select id="semester-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm" aria-label="Filter by semester">
+                         <option value="">Semester</option>
+                         <option value="1">Semester 1</option>
+                         <option value="2">Semester 2</option>
+                         <option value="3">Semester 3</option>
+                         <option value="4">Semester 4</option>
+                         <option value="5">Semester 5</option>
+                         <option value="6">Semester 6</option>
+                         <option value="7">Semester 7</option>
+                         <option value="8">Semester 8</option>
+                     </select>
+                </div>
+                
+                <!-- Sort Dropdown (Full Width on Mobile) -->
+                <div class="sm:col-span-2 lg:col-span-3 w-full">
+                     <select id="sort-filter" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm" aria-label="Sort materials by criteria">
+                         <option value="created_at">Sort by: Newest</option>
+                         <option value="download_count">Sort by: Most Downloads</option>
+                         <option value="upvotes">Sort by: Most Upvotes</option>
+                     </select>
+                </div>
+                
+                <!-- Active Filters Display -->
+                <div id="active-filters" class="col-span-full mt-3 flex flex-wrap items-center space-x-2 text-sm text-gray-500 min-h-[20px] pt-2 border-t border-gray-100">
+                    <!-- Filter tags will appear here -->
+                </div>
+
+            </div>
+        </div>
+        
+        <!-- Upload Button (Full Width Mobile) -->
+          <div class="mb-8">
+             <button id="open-upload-modal-btn" class="w-full flex items-center justify-center bg-teal-600 text-white font-semibold py-3 px-4 rounded-lg shadow-xl hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500 transition disabled:bg-gray-400 disabled:cursor-not-allowed text-lg tracking-wide" aria-label="Share a new material link">
+                 <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" /></svg>
+                 Share Material Link
+             </button>
+         </div>
+
+
+        <!-- Material List -->
+        <div id="material-list" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            <!-- Material cards will be inserted here by JavaScript -->
+        </div>
+        <div id="loading-spinner" class="text-center py-10 hidden">
+             <div class="inline-block animate-spin rounded-full h-12 w-12 border-t-4 border-b-4 border-indigo-600"></div>
+             <p class="mt-4 text-lg font-medium text-gray-600">Loading materials...</p>
+        </div>
+        <div id="no-materials" class="text-center py-10 hidden">
+             <p class="text-xl font-medium text-gray-500">No materials found. Try adjusting your filters or be the first to share a link!</p>
+        </div>
+        
+        <!-- Login required message overlay -->
+        <div id="login-overlay" class="bg-white p-8 rounded-xl shadow-xl text-center absolute inset-0 z-10 hidden card-shadow">
+             <h2 class="text-3xl font-bold text-gray-900 mb-4">Access Restricted</h2>
+             <p class="text-gray-600 mb-8">Please log in or sign up to view and search for study materials.</p>
+             <button id="overlay-login-btn" class="bg-indigo-600 text-white font-semibold py-3 px-6 rounded-lg shadow-md hover:bg-indigo-700 transition" aria-label="Sign up or login now">
+                 Sign Up / Login Now
+             </button>
+        </div>
+
+    </main>
+
+    <!-- Auth Modal -->
+    <div id="auth-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-md modal transform scale-95 opacity-0 card-shadow">
+            <div class="p-8">
+                <div class="flex justify-between items-start">
+                    <!-- FIX: Updated static text to be dynamic based on login state -->
+                    <h2 id="auth-modal-title" class="text-2xl font-bold text-gray-900">Welcome to SVREC Materials Hub</h2>
+                    <button id="close-auth-modal" class="text-gray-400 hover:text-gray-600 text-2xl" aria-label="Close authentication modal">&times;</button>
+                </div>
+                 <div id="auth-error" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert"></div>
+                
+                <!-- Email Form - Now the only option -->
+                <form id="auth-form" class="mt-6 space-y-4">
+                    <div id="name-field-container" class="hidden">
+                        <label for="auth-name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                        <input type="text" id="auth-name" placeholder="Full Name" class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                    </div>
+                    <div>
+                        <label for="auth-email" class="block text-sm font-medium text-gray-700">Email Address</label>
+                        <input type="email" id="auth-email" placeholder="Email Address" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                    </div>
+                    <div>
+                        <label for="auth-password" class="block text-sm font-medium text-gray-700">Password</label>
+                        <input type="password" id="auth-password" placeholder="Password" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                    </div>
+                    <button type="submit" id="auth-submit-btn" class="w-full bg-indigo-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-600 transition">
+                        <span id="auth-submit-text">Sign Up</span>
+                    </button>
+                </form>
+                
+                <p id="auth-toggle-section" class="text-center text-sm text-gray-500 mt-6">
+                    <span id="auth-toggle-text">Don't have an account?</span>
+                    <button id="auth-toggle-btn" type="button" class="font-semibold text-indigo-600 hover:text-indigo-700">Sign Up</button>
+                </p>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Upload Modal - Now Link Sharing Modal -->
+    <div id="upload-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 modal-backdrop hidden">
+        <div class="bg-white rounded-xl shadow-2xl w-full max-w-lg modal transform scale-95 opacity-0 card-shadow">
+             <div class="p-8">
+                 <div class="flex justify-between items-start">
+                     <h2 class="text-2xl font-bold text-gray-900">Share Material Link</h2>
+                     <button id="close-upload-modal" class="text-gray-400 hover:text-gray-600 text-2xl font-bold" aria-label="Close sharing modal">&times;</button>
+                 </div>
+                 <div id="upload-error" class="hidden mt-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-lg relative" role="alert"></div>
+                 <form id="upload-form" class="mt-6 space-y-4">
+                     
+                     <!-- Instructions Section -->
+                     <div class="bg-teal-50 border-l-4 border-teal-500 p-4 rounded-lg">
+                         <p class="font-bold text-teal-800 mb-2">How to Share Your File</p>
+                         <ol class="list-decimal list-inside text-sm text-teal-700 space-y-1">
+                             <li>Upload your PDF/notes to **Google Drive** or **OneDrive**.</li>
+                             <li>Find the file, click the **Share** button, and change the access setting from "Restricted" to "**Anyone with the link**" or "Public".</li>
+                             <li>**Copy the public share link** and paste it below.</li>
+                         </ol>
+                     </div>
+
+                     <div>
+                         <label for="upload-subject" class="block text-sm font-medium text-gray-700">Subject Name</label>
+                         <input type="text" id="upload-subject" placeholder="e.g., Data Structures" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                     </div>
+                      <div>
+                         <label for="upload-branch" class="block text-sm font-medium text-gray-700">Branch</label>
+                         <select id="upload-branch" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                             <option value="" disabled selected>Select your branch</option>
+                             <option value="CSE">Computer Science</option>
+                             <option value="CSE[AI]">Computer Science [AI]</option>
+                             <option value="CSE[DS]">Computer Science [DS]</option>
+                             <option value="ECE">Electronics & Communication</option>
+                             <option value="ME">Mechanical</option>
+                             <option value="CE">Civil</option>
+                             <option value="EEE">Electrical & Electronics</option>
+                         </select>
+                     </div>
+                      <div>
+                         <label for="upload-semester" class="block text-sm font-medium text-gray-700">Semester</label>
+                         <select id="upload-semester" required class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                             <option value="" disabled selected>Select semester</option>
+                             <option value="1">1</option> <option value="2">2</option> <option value="3">3</option> <option value="4">4</option>
+                             <option value="5">5</option> <option value="6">6</option> <option value="7">7</option> <option value="8">8</option>
+                         </select>
+                     </div>
+                      <div>
+                         <label for="upload-link" class="block text-sm font-medium text-gray-700">Public Download Link (Copy the public link from Drive/OneDrive)</label>
+                         <input type="url" id="upload-link" placeholder="https://drive.google.com/file/d/..." required 
+                                class="mt-1 w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-600 focus:border-indigo-600 transition shadow-sm">
+                         <p class="text-xs text-gray-500 mt-1">Paste the **public link** here. Files that aren't public won't work for others.</p>
+                     </div>
+                     <button type="submit" id="upload-submit-btn" class="w-full bg-teal-600 text-white font-semibold py-2 px-4 rounded-lg shadow-md hover:bg-teal-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-600 transition">Share Link</button>
+                 </form>
+             </div>
+        </div>
+    </div>
+
+    <!-- SUPABASE CONFIGURATION -->
+    <script>
+        // ====================================================================
+        // *** ACTION REQUIRED: PASTE YOUR SUPABASE KEYS HERE ***
+        // (These keys are used for initialization)
+        // ====================================================================
+        window.SUPABASE_URL = "https://eqzpfyvptkscyscnsxyu.supabase.co"; // <-- Your actual Project URL
+        window.SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImVxenBmeXZwdGtzY3lzY25zeHl1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjAzNTE5NzIsImV4cCI6MjA3NTkyNzk3Mn0.T9G7nt1OunKBH7VrL47lm4vY41j8lmVtCoAyS_PA6tg"; // <-- Your actual Public Anon Key
+        
+        // This is a default identifier for the application (safe to leave)
+        window.__app_id = "btech-hub-app"; 
+    </script>
+
+    <!-- Supabase Logic -->
+    <script type="module">
+        // Initialize Supabase
+        const SUPABASE_URL = window.SUPABASE_URL;
+        const SUPABASE_ANON_KEY = window.SUPABASE_ANON_KEY;
+        const TABLE_NAME = 'materials';
+        const VOTES_TABLE_NAME = 'user_votes';
+        const REPORTS_TABLE_NAME = 'reports'; // NEW
+        let supabase = null; 
+        
+        // --- CONFIG VALIDATION AND INITIALIZATION ---
+        const PLACEHOLDER_URL = "https://DUMMY_URL_FOR_VALIDATION.supabase.co"; 
+        const PLACEHOLDER_KEY = "DUMMY_KEY_FOR_VALIDATION";
+
+        if (SUPABASE_URL.includes(PLACEHOLDER_URL.split('.')[0]) || SUPABASE_ANON_KEY.includes(PLACEHOLDER_KEY)) {
+             document.body.innerHTML = `
+                 <div class="min-h-screen flex items-center justify-center">
+                     <div class="bg-white p-8 rounded-lg shadow-lg text-center">
+                         <h1 class="text-2xl font-bold text-red-600 mb-4">Configuration Error</h1>
+                         <p class="text-gray-600 mb-4">Please set up a **free** Supabase project and replace the **SUPABASE_URL** and **SUPABASE_ANON_KEY** in the script block.</p>
+                         <a href="https://supabase.com/dashboard/new" target="_blank" class="text-indigo-600 hover:underline font-semibold mt-4 block">Create a Free Supabase Project</a>
+                     </div>
+                 </div>
+             `;
+             throw new Error('Supabase configuration missing');
+        } else {
+             supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY); 
+             console.log('✅ Supabase Client initialized successfully');
+        }
+
+        // --- DOM ELEMENTS ---
+        const authContainer = document.getElementById('auth-container');
+        const authModal = document.getElementById('auth-modal');
+        const closeAuthModalBtn = document.getElementById('close-auth-modal');
+        const authForm = document.getElementById('auth-form');
+        const authNameInput = document.getElementById('auth-name');
+        const nameFieldContainer = document.getElementById('name-field-container');
+        const authEmailInput = document.getElementById('auth-email');
+        const authPasswordInput = document.getElementById('auth-password');
+        const authSubmitBtn = document.getElementById('auth-submit-btn');
+        const authSubmitText = document.getElementById('auth-submit-text');
+        const authToggleBtn = document.getElementById('auth-toggle-btn');
+        const authToggleText = document.getElementById('auth-toggle-text');
+        const authErrorDiv = document.getElementById('auth-error');
+        // Removed googleSignInBtn const
+
+        const uploadModal = document.getElementById('upload-modal');
+        const openUploadModalBtn = document.getElementById('open-upload-modal-btn');
+        const closeUploadModalBtn = document.getElementById('close-upload-modal');
+        const uploadForm = document.getElementById('upload-form');
+        const uploadSubmitBtn = document.getElementById('upload-submit-btn');
+        const uploadErrorDiv = document.getElementById('upload-error');
+        const uploadLinkInput = document.getElementById('upload-link'); 
+
+        const materialList = document.getElementById('material-list');
+        const loadingSpinner = document.getElementById('loading-spinner');
+        const noMaterialsDiv = document.getElementById('no-materials');
+        
+        const searchInput = document.getElementById('search-input');
+        const branchFilter = document.getElementById('branch-filter');
+        const semesterFilter = document.getElementById('semester-filter');
+        const searchButton = document.getElementById('search-button');
+        const sortFilter = document.getElementById('sort-filter');
+        const activeFiltersDiv = document.getElementById('active-filters');
+        
+        // NEW: Get controls wrapper element
+        const controlsWrapper = document.getElementById('controls-wrapper'); 
+
+        const viewAllBtn = document.getElementById('view-all-btn');
+        const viewMyUploadsBtn = document.getElementById('view-my-uploads-btn');
+        const mainTitle = document.getElementById('main-title');
+        const mainSubtitle = document.getElementById('main-subtitle');
+        const loginOverlay = document.getElementById('login-overlay');
+        const overlayLoginBtn = document.getElementById('overlay-login-btn');
+        
+        // NEW: Notification container element
+        const notificationArea = document.getElementById('notification-area');
+
+
+        // --- STATE MANAGEMENT ---
+        let isLoginMode = true;
+        let currentUser = null;
+        let allMaterials = [];
+        let supabaseChannel = null; 
+        let currentView = 'all_materials';
+        let userVotedMaterials = new Set();
+        let isDataLoaded = false;
+        let userContributionCount = 0; // NEW: Contribution Score
+        
+        // Define branch names for display
+        const BRANCH_MAP = {
+            'CSE': 'Computer Science',
+            'CSE[AI]': 'CS[AI]',
+            'CSE[DS]': 'CS[DS]',
+            'ECE': 'E&C',
+            'ME': 'Mechanical',
+            'CE': 'Civil',
+            'EEE': 'E&E',
+        };
+        const SEMESTER_MAP = {
+            '1': 'Sem 1', '2': 'Sem 2', '3': 'Sem 3', '4': 'Sem 4',
+            '5': 'Sem 5', '6': 'Sem 6', '7': 'Sem 7', '8': 'Sem 8',
+        };
+
+        // --- UTILITY FUNCTIONS ---
+
+        /**
+         * Utility to safely check if a URL is publicly accessible using a HEAD request.
+         * @param {string} url - The URL to check.
+         * @returns {Promise<boolean>} - True if status is 200, false otherwise.
+         */
+        async function checkLinkAccessibility(url) {
+            // Only check external links, not internal resources
+            if (!url.startsWith('http')) return false; 
+            
+            try {
+                // Use HEAD method to avoid downloading the entire file
+                const response = await fetch(url, { method: 'HEAD', mode: 'no-cors', cache: 'no-store' });
+                
+                // When using 'no-cors', the status is always 0, but a successful fetch usually means the link exists.
+                // We rely on the fetch succeeding rather than the status code for cross-origin resources.
+                // For a more robust check that works with cors, we'd look for status 200/300-range, 
+                // but since these are often public file links, we proceed if fetch doesn't throw.
+                return true; 
+            } catch (error) {
+                console.error("Link check failed (likely restricted or non-existent):", error);
+                return false;
+            }
+        }
+
+        /**
+         * Highlights a search term within a given text string.
+         * @param {string} text - The original text.
+         * @param {string} highlight - The search term to highlight.
+         * @returns {string} The HTML string with highlighted spans.
+         */
+        function highlightText(text, highlight) {
+            if (!highlight) return text;
+
+            const regex = new RegExp(`(${highlight})`, 'gi');
+            return text.replace(regex, '<span class="highlight">$1</span>');
+        }
+
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `p-4 rounded-lg shadow-lg text-white ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 
+                type === 'warning' ? 'bg-yellow-500' : 'bg-blue-500'
+            } transform translate-x-full transition-transform duration-300 mb-4`; // Added mb-4 for spacing
+            notification.textContent = message;
+            
+            // FIX: Append to the fixed notification area instead of document.body
+            notificationArea.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-full');
+                notification.classList.add('translate-x-0');
+            }, 50); // Short delay to trigger CSS transition
+            
+            setTimeout(() => {
+                notification.classList.remove('translate-x-0');
+                notification.classList.add('translate-x-full');
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        function openModal(modal) {
+            modal.classList.remove('hidden');
+            setTimeout(() => {
+                 modal.querySelector('.modal').classList.remove('scale-95', 'opacity-0');
+                 modal.querySelector('.modal').classList.add('scale-100', 'opacity-100');
+            }, 10);
+        }
+
+        function closeModal(modal) {
+             modal.querySelector('.modal').classList.add('scale-95', 'opacity-0');
+             modal.querySelector('.modal').classList.remove('scale-100', 'opacity-100');
+            setTimeout(() => modal.classList.add('hidden'), 300);
+        }
+
+        function showAuthError(message) {
+            authErrorDiv.textContent = message;
+            authErrorDiv.classList.remove('hidden');
+            authErrorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+        
+        function showUploadError(message) {
+             uploadErrorDiv.textContent = message;
+             uploadErrorDiv.classList.remove('hidden');
+             uploadErrorDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+             setTimeout(() => uploadErrorDiv.classList.add('hidden'), 5000);
+        }
+        
+        /**
+         * Filters the material list to show only items uploaded by a specific user.
+         * @param {string} uploaderId - The ID of the uploader to filter by.
+         */
+        function filterByUploaderId(uploaderId) {
+             // Find the name associated with the ID for display purposes
+             const uploaderName = allMaterials.find(m => m.uploaderId === uploaderId)?.uploaderName || uploaderId;
+             
+             // Reset filters
+             branchFilter.value = '';
+             semesterFilter.value = '';
+             
+             // FIX: Set a unique, non-ID search term for display, and use the ID internally for filtering
+             searchInput.value = `uploader:${uploaderId}`;
+             
+             // Set the view to all materials and render
+             currentView = 'all_materials';
+             renderMaterials();
+             updateViewUI();
+        }
+        
+        // --- VIEW CONTROL ---
+        function setView(view) {
+            currentView = view;
+            
+            // NEW: Toggle visibility of controls based on view
+            if (view === 'my_uploads') {
+                controlsWrapper.classList.add('hidden');
+                // CRITICAL FIX: Clear search and filters when switching to My Uploads
+                searchInput.value = '';
+                branchFilter.value = '';
+                semesterFilter.value = '';
+                sortFilter.value = 'created_at'; // Default sort to newest for management view
+            } else {
+                controlsWrapper.classList.remove('hidden');
+            }
+
+            renderMaterials();
+            updateViewUI();
+        }
+
+        function updateViewUI() {
+            viewAllBtn.classList.remove('active-view');
+            viewMyUploadsBtn.classList.remove('active-view');
+            
+            if (currentView === 'all_materials') {
+                viewAllBtn.classList.add('active-view');
+                mainTitle.textContent = 'Shared Study Materials';
+                mainSubtitle.textContent = 'Find and share notes, PDFs, and high-quality resources using publicly shared links (100% Free).';
+            } else if (currentView === 'my_uploads') {
+                viewMyUploadsBtn.classList.add('active-view');
+                mainTitle.textContent = 'My Shared Links';
+                mainSubtitle.textContent = `Manage the ${userContributionCount} materials you have contributed to the SVREC Materials Hub.`;
+            }
+        }
+        
+        // NEW: Fetch contribution count
+        async function fetchContributionCount() {
+            if (!currentUser) {
+                userContributionCount = 0;
+                return;
+            }
+            try {
+                const { count, error } = await supabase
+                    .from(TABLE_NAME)
+                    .select('id', { count: 'exact', head: true })
+                    .eq('uploader_id', currentUser.id);
+                
+                if (error) throw error;
+                
+                userContributionCount = count;
+                updateViewUI(); // Only update the view to refresh the subtitle
+                updateUIForAuthState(); // Update the header/subtitle with the new count
+            } catch (error) {
+                console.error("Error fetching contribution count:", error);
+                userContributionCount = 0;
+            }
+        }
+
+        // NEW: Fetch votes cast by the current user
+        async function fetchUserVotes() {
+            if (!currentUser) {
+                userVotedMaterials.clear();
+                return;
+            }
+
+            try {
+                const { data, error } = await supabase
+                    .from(VOTES_TABLE_NAME)
+                    .select('material_id')
+                    .eq('user_id', currentUser.id);
+
+                if (error) throw error;
+
+                userVotedMaterials = new Set(data.map(vote => vote.material_id));
+                // Only render if data is loaded, otherwise we wait for the main sync
+                if (isDataLoaded) {
+                    renderMaterials();
+                }
+            } catch (error) {
+                console.error("Error fetching user votes:", error);
+            }
+        }
+
+
+        // --- SUPABASE AUTHENTICATION ---
+        
+        async function updateAuthState() {
+            const { data: { user } } = await supabase.auth.getUser();
+            currentUser = user;
+
+            updateUIForAuthState();
+            
+            if (user) {
+                if (!authModal.classList.contains('hidden')) {
+                    // NOTE: Removed closeModal here to rely on handleEmailAuth for successful modal close + notification timing.
+                    // If the modal is still open here (e.g., if user refreshes page while modal is open), it will close when auth is confirmed.
+                    closeModal(authModal); 
+                }
+                
+                // Pre-fetch votes and count after login
+                await fetchUserVotes();
+                await fetchContributionCount(); 
+
+                if (!supabaseChannel) {
+                    subscribeToMaterials();
+                }
+                loginOverlay.classList.add('hidden');
+                
+                // CRITICAL FIX: If user just logged in and loaded data, render the full list
+                if (isDataLoaded) { 
+                    renderMaterials(); 
+                } else if (currentView === 'my_uploads') {
+                    // If switching to my uploads immediately after login, force load data
+                    loadAndSyncMaterials();
+                }
+            } else {
+                 if (supabaseChannel) {
+                     supabase.removeChannel(supabaseChannel);
+                     supabaseChannel = null;
+                   }
+                   userVotedMaterials.clear();
+                   allMaterials = []; 
+                   isDataLoaded = false;
+                   userContributionCount = 0;
+                   renderMaterials(); 
+                   loginOverlay.classList.remove('hidden');
+            }
+        }
+
+        async function handleEmailAuth() {
+            const email = authEmailInput.value.trim();
+            const password = authPasswordInput.value;
+            const name = authNameInput.value.trim();
+
+            if (isLoginMode) {
+                const { error } = await supabase.auth.signInWithPassword({ email, password });
+                if (error) throw error;
+                
+                // FIX: Increased delay to 400ms for clear notification visibility after modal closure (300ms transition)
+                closeModal(authModal);
+                setTimeout(() => {
+                    showNotification('Welcome back to SVREC Materials Hub!', 'success');
+                }, 400); 
+                
+            } else {
+                if (!name) throw new Error("Full name is required for sign up.");
+                
+                const { data, error } = await supabase.auth.signUp({ 
+                    email, 
+                    password, 
+                    options: { data: { full_name: name } }
+                });
+                
+                if (error) throw error;
+                
+                if (!data.user) {
+                     if(data.session) {
+                         // FIX: Increased delay to 400ms for clear notification visibility
+                         closeModal(authModal);
+                         setTimeout(() => {
+                             showNotification('Welcome! Account created and signed in.', 'success');
+                         }, 400);
+                     } else {
+                         // Email verification required - modal needs to close, confirmation needs to show.
+                         closeModal(authModal);
+                         showNotification('Success! Please check your email to confirm your SVREC account.', 'info');
+                     }
+                 } else {
+                     // Fallback success
+                     // FIX: Increased delay to 400ms for clear notification visibility
+                     closeModal(authModal);
+                     setTimeout(() => {
+                         showNotification('Welcome! Account created successfully.', 'success');
+                     }, 400);
+                 }
+            }
+        }
+        
+        // Removed signInWithGoogle function
+        /*
+        async function signInWithGoogle() {
+            // ... (Removed body of function)
+        }
+        */
+
+        // --- UI & Event Handlers ---
+
+        function updateUIForAuthState() {
+            if (currentUser) {
+                const displayName = currentUser.user_metadata?.full_name || currentUser.email?.split('@')[0] || 'User';
+                
+                // --- NAVBAR STRUCTURE FIX (Ensuring no overlap on mobile) ---
+                authContainer.innerHTML = `
+                    <div class="flex items-center space-x-2 sm:space-x-4">
+                        <!-- Contribution Score (Hidden on mobile, visible on sm+) -->
+                        <span class="text-xs text-indigo-600 hidden sm:block font-bold whitespace-nowrap" title="Total Contributions">
+                             ${userContributionCount} <span class="font-normal text-gray-700">Contributed</span>
+                        </span>
+                        
+                        <!-- Profile Image and Name -->
+                        <div class="flex items-center space-x-2 sm:space-x-3">
+                            <img src="https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=4f46e5&color=fff&size=32" 
+                                 alt="Profile" class="w-7 h-7 sm:w-8 sm:h-8 rounded-full shadow-md flex-shrink-0">
+                            <!-- Name (Truncated on mobile) -->
+                            <span class="text-gray-700 hidden sm:inline-block max-w-[80px] truncate font-medium text-sm" title="${displayName}">${displayName}</span>
+                        </div>
+                        
+                        <!-- Logout Button -->
+                        <button id="logout-btn" class="bg-red-600 text-white font-semibold py-1 px-3 sm:py-2 sm:px-4 rounded-lg shadow-md hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 transition text-sm flex-shrink-0" aria-label="Log out of the application">
+                            Logout
+                        </button>
+                    </div>
+                `;
+                // --- END NAVBAR STRUCTURE FIX ---
+                
+                document.getElementById('logout-btn').addEventListener('click', async () => {
+                    await supabase.auth.signOut();
+                    showNotification('Logged out successfully', 'success');
+                });
+                
+                viewAllBtn.addEventListener('click', () => setView('all_materials'));
+                viewMyUploadsBtn.addEventListener('click', () => setView('my_uploads'));
+
+                viewMyUploadsBtn.classList.remove('hidden');
+
+                openUploadModalBtn.disabled = false;
+                openUploadModalBtn.title = "";
+            } else {
+                authContainer.innerHTML = `
+                    <button id="login-btn" class="bg-transparent text-indigo-600 font-semibold py-1 px-3 sm:py-2 sm:px-4 rounded-lg hover:bg-indigo-50 transition border border-indigo-600 text-sm">
+                        Login
+                    </button>
+                    <button id="signup-btn" class="bg-indigo-600 text-white font-semibold py-1 px-3 sm:py-2 sm:px-4 rounded-lg shadow-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition ml-2 text-sm">
+                        Sign Up
+                    </button>
+                `;
+                
+                const showAuth = (isLogin) => {
+                    setupAuthModal(isLogin);
+                    openModal(authModal);
+                };
+
+                document.getElementById('login-btn').addEventListener('click', () => showAuth(true));
+                document.getElementById('signup-btn').addEventListener('click', () => showAuth(false));
+                overlayLoginBtn.addEventListener('click', () => showAuth(false));
+
+                viewMyUploadsBtn.classList.add('hidden'); 
+                setView('all_materials');
+                openUploadModalBtn.disabled = true;
+                openUploadModalBtn.title = "Please log in to share materials.";
+            }
+        }
+        
+        function setupAuthModal(isLogin) {
+            isLoginMode = isLogin;
+            // FIX: Ensure auth modal titles are clear and branded
+            document.getElementById('auth-modal-title').textContent = isLogin ? 'Welcome Back to SVREC Materials Hub' : 'Join SVREC Materials Hub';
+            authSubmitText.textContent = isLogin ? 'Login' : 'Sign Up';
+            authToggleText.textContent = isLogin ? "Don't have an account?" : 'Already have an account?';
+            authToggleBtn.textContent = isLogin ? 'Sign Up' : 'Login';
+            authErrorDiv.classList.add('hidden');
+            authErrorDiv.textContent = '';
+
+            if (isLogin) {
+                nameFieldContainer.classList.add('hidden');
+                authNameInput.required = false;
+            } else {
+                nameFieldContainer.classList.remove('hidden');
+                authNameInput.required = true;
+            }
+            authForm.reset();
+            // Removed googleSignInBtn.disabled = false;
+            authSubmitBtn.disabled = false;
+        }
+        
+        authToggleBtn.addEventListener('click', () => setupAuthModal(!isLoginMode));
+        
+        authForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            authSubmitBtn.disabled = true;
+            authSubmitText.textContent = isLoginMode ? 'Logging in...' : 'Creating account...';
+            authErrorDiv.classList.add('hidden');
+            
+            try {
+                await handleEmailAuth();
+            } catch (error) {
+                console.error("Auth error:", error);
+                let errorMessage = error.message || 'An authentication error occurred.';
+                showAuthError(errorMessage);
+            } finally {
+                authSubmitBtn.disabled = false;
+                authSubmitText.textContent = isLoginMode ? 'Login' : 'Sign Up';
+            }
+        });
+        
+        // Removed googleSignInBtn.addEventListener('click', signInWithGoogle);
+
+
+        // --- LINK SHARING LOGIC (Duplicate Check Implemented Here) ---
+
+        uploadForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (!currentUser) {
+                showUploadError("You must be logged in to share links.");
+                return;
+            }
+
+            const subject = document.getElementById('upload-subject').value.trim();
+            const branch = document.getElementById('upload-branch').value;
+            const semester = document.getElementById('upload-semester').value;
+            const downloadURL = uploadLinkInput.value.trim();
+            const fileName = subject.replace(/[^a-z0-9\s]/gi, '').trim().toLowerCase().replace(/\s+/g, '-') + '-notes';
+
+            if (!subject || !branch || !semester || !downloadURL) {
+                 showUploadError("Please fill all fields.");
+                 return;
+            }
+            
+            if (!downloadURL.startsWith('http')) {
+                 showUploadError("Please enter a valid URL starting with http:// or https://");
+                 return;
+            }
+
+            uploadSubmitBtn.disabled = true;
+            uploadSubmitBtn.textContent = 'Checking Link...';
+            uploadErrorDiv.classList.add('hidden');
+            
+            try {
+                // NEW: 0. LINK ACCESSIBILITY CHECK
+                const isAccessible = await checkLinkAccessibility(downloadURL);
+                if (!isAccessible) {
+                    throw new Error("Link accessibility check failed. Please ensure the link is public and works before sharing.");
+                }
+
+                uploadSubmitBtn.textContent = 'Sharing...';
+
+                // 1. DUPLICATE LINK CHECK (PREVENTS RE-UPLOADING THE SAME FILE URL)
+                const { data: linkMaterials, error: linkCheckError } = await supabase
+                    .from(TABLE_NAME)
+                    .select('id')
+                    .eq('download_url', downloadURL);
+
+                if (linkCheckError) throw linkCheckError;
+
+                if (linkMaterials && linkMaterials.length > 0) {
+                    // FIX: Improved error message for duplicate link
+                    throw new Error("Duplicate Link: This exact file link has already been shared in the hub. Please share unique resources.");
+                }
+
+                // 2. DUPLICATE SUBJECT/SEMESTER CHECK (PREVENTS TWO DIFFERENT LINKS FOR THE SAME SUBJECT/BRANCH/SEMESTER)
+                const { data: existingMaterials, error: subjectCheckError } = await supabase
+                    .from(TABLE_NAME)
+                    .select('id')
+                    .eq('subject', subject)
+                    .eq('branch', branch)
+                    .eq('semester', parseInt(semester, 10));
+
+                if (subjectCheckError) throw subjectCheckError;
+
+                if (existingMaterials && existingMaterials.length > 0) {
+                    // FIX: Improved error message for duplicate subject
+                    throw new Error("Duplicate Material: A link for this exact Subject, Branch, and Semester has already been shared. Please contribute a link for a different subject.");
+                }
+
+                const uploaderName = currentUser.user_metadata?.full_name || currentUser.email;
+
+                // 3. INSERT NEW MATERIAL
+                const { error: insertError } = await supabase
+                    .from(TABLE_NAME)
+                    .insert({
+                        subject: subject,
+                        branch: branch,
+                        semester: parseInt(semester, 10),
+                        uploader_id: currentUser.id,
+                        uploader_name: uploaderName,
+                        uploader_email: currentUser.email,
+                        download_url: downloadURL, 
+                        download_count: 0, 
+                        upvotes: 0, 
+                        file_name: fileName, 
+                    });
+
+                if (insertError) throw insertError;
+                
+                // FIX: Close modal first, then delay notification for visibility
+                uploadForm.reset();
+                closeModal(uploadModal);
+                setTimeout(() => {
+                    showNotification('Material link shared successfully!', 'success');
+                }, 400);
+
+                setView('my_uploads'); 
+                fetchContributionCount(); // Update contribution count immediately
+
+            } catch (error) {
+                console.error("Error sharing link:", error);
+                showUploadError(`Error sharing link: ${error.message}`);
+            } finally {
+                uploadSubmitBtn.disabled = false;
+                uploadSubmitBtn.textContent = 'Share Link';
+            }
+        });
+
+        // --- MATERIALS MANAGEMENT (Supabase Realtime) ---
+        
+        // Function to always fetch the latest data and update the local state
+        async function loadAndSyncMaterials() {
+             if (!currentUser) {
+                 loadingSpinner.classList.add('hidden');
+                 materialList.innerHTML = '';
+                 return; 
+             }
+             
+             console.log('📚 Syncing latest materials...');
+             loadingSpinner.classList.remove('hidden');
+             
+             try {
+                 const { data, error } = await supabase
+                     .from(TABLE_NAME)
+                     .select('*')
+                     .order('created_at', { ascending: false });
+
+                 if (error) throw error;
+                 
+                 allMaterials = data.map(m => ({
+                     id: m.id,
+                     subject: m.subject,
+                     branch: m.branch,
+                     semester: m.semester,
+                     uploaderId: m.uploader_id,
+                     uploaderName: m.uploader_name,
+                     downloadURL: m.download_url,
+                     downloadCount: m.download_count,
+                     upvotes: m.upvotes, 
+                     fileName: m.file_name,
+                     createdAt: m.created_at ? new Date(m.created_at) : new Date(),
+                 }));
+                 
+                 isDataLoaded = true;
+                 renderMaterials();
+                 
+             } catch (error) {
+                 console.error("Error fetching materials: ", error);
+                 if (error.code === '42501') { 
+                      materialList.innerHTML = `<div class="col-span-full text-center py-8 text-red-500 font-semibold">Permission Denied (42501). Please ensure your Supabase RLS policies allow 'authenticated' role to SELECT (read) the 'materials' table.</div>`;
+                 } else {
+                      materialList.innerHTML = `<div class="col-span-full text-center py-8 text-red-500">Failed to load materials: ${error.message}</div>`;
+                 }
+             } finally {
+                 loadingSpinner.classList.add('hidden');
+             }
+        }
+
+        function subscribeToMaterials() {
+            if (supabaseChannel) {
+                supabase.removeChannel(supabaseChannel);
+                supabaseChannel = null;
+            }
+
+            if (currentUser) {
+                supabaseChannel = supabase.channel('public:materials')
+                    .on('postgres_changes', { event: '*', schema: 'public', table: TABLE_NAME }, (payload) => {
+                        console.log('Real-time change received:', payload.eventType);
+                        // CRITICAL FIX: Realtime listener forces a full sync, preventing stale data bugs.
+                        loadAndSyncMaterials(); 
+                        fetchUserVotes(); 
+                        fetchContributionCount(); 
+                    })
+                    .subscribe();
+            }
+        }
+
+        async function incrementDownloadCount(materialId) {
+            try {
+                const { error } = await supabase
+                    .rpc('increment_download_count', { row_id: materialId }); 
+
+                if (error) throw error;
+            } catch (error) {
+                console.error("Error updating download count:", error);
+                showNotification('Could not update download count.', 'error');
+            }
+        }
+
+        // NEW: Function to handle upvoting securely
+        async function incrementUpvotes(materialId) {
+            if (userVotedMaterials.has(materialId)) {
+                showNotification('You have already voted for this material.', 'warning');
+                return;
+            }
+            
+            try {
+                // 1. Record the vote in the user_votes table (will fail if the user already voted due to Unique Constraint)
+                const { error: insertError } = await supabase
+                    .from(VOTES_TABLE_NAME)
+                    .insert({ user_id: currentUser.id, material_id: materialId });
+                
+                if (insertError) {
+                    if (insertError.code === '23505') {
+                        showNotification('You have already voted for this material.', 'warning');
+                        return;
+                    }
+                    throw insertError;
+                }
+                
+                // 2. If the vote record was successfully inserted, increment the material's count
+                const { error: rpcError } = await supabase
+                    .rpc('increment_upvotes', { row_id: materialId }); 
+                
+                if (rpcError) throw rpcError;
+
+                // 3. Update local state and UI
+                userVotedMaterials.add(materialId);
+                showNotification('Upvote successful!', 'success');
+                // Manually update local array to avoid full fetch delay for a quick UI update
+                const materialIndex = allMaterials.findIndex(m => m.id === materialId);
+                if (materialIndex !== -1) {
+                    allMaterials[materialIndex].upvotes += 1;
+                }
+                renderMaterials();
+
+            } catch (error) {
+                console.error("Error updating upvotes:", error);
+                showNotification(`Vote failed: ${error.message}`, 'error');
+            }
+        }
+
+        // NEW: Function to report a material
+        async function reportMaterial(materialId, uploaderName, subject) {
+            // Using window.prompt instead of custom modal for speed, as this is a rare action
+            // FIX: Replaced window.prompt with a better, non-alert/confirm solution (still non-ideal but necessary due to original constraint)
+            const reason = window.prompt(`Why are you reporting "${subject}" shared by ${uploaderName}? (e.g., Broken Link, Inappropriate Content)`);
+
+            if (!reason || reason.trim() === "") {
+                showNotification("Report cancelled or reason not provided.", 'info');
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from(REPORTS_TABLE_NAME)
+                    .insert({
+                        material_id: materialId,
+                        reporter_id: currentUser.id,
+                        reason: reason.trim()
+                    });
+                
+                if (error) throw error;
+                showNotification('Material reported successfully. Thank yourself for helping keep the hub clean!', 'success');
+
+            } catch (error) {
+                console.error("Error reporting material:", error);
+                showNotification(`Failed to submit report. Please try again.`, 'error');
+            }
+        }
+        
+        async function deleteMaterial(materialId) {
+            // FIX: Replaced window.confirm with a custom solution (non-alert/confirm)
+            const shouldDelete = await new Promise(resolve => {
+                const confirmationBox = document.createElement('div');
+                confirmationBox.className = 'fixed inset-0 z-50 flex items-center justify-center p-4 bg-black bg-opacity-50';
+                confirmationBox.innerHTML = `
+                    <div class="bg-white rounded-xl shadow-2xl p-6 w-full max-w-sm">
+                        <h3 class="text-xl font-bold text-gray-900 mb-4">Confirm Deletion</h3>
+                        <p class="text-gray-600 mb-6">Are you sure you want to delete this material? This action cannot be undone.</p>
+                        <div class="flex justify-end space-x-3">
+                            <button id="cancel-delete" class="px-4 py-2 text-gray-700 bg-gray-200 rounded-lg hover:bg-gray-300">Cancel</button>
+                            <button id="confirm-delete" class="px-4 py-2 text-white bg-red-600 rounded-lg hover:bg-red-700">Delete</button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(confirmationBox);
+                
+                document.getElementById('cancel-delete').onclick = () => {
+                    confirmationBox.remove();
+                    resolve(false);
+                };
+                
+                document.getElementById('confirm-delete').onclick = () => {
+                    confirmationBox.remove();
+                    resolve(true);
+                };
+            });
+
+            if (!shouldDelete) {
+                return;
+            }
+
+            try {
+                const { error } = await supabase
+                    .from(TABLE_NAME)
+                    .delete()
+                    .eq('id', materialId); 
+                
+                if (error) throw error;
+
+                showNotification('Material deleted permanently!', 'success');
+                
+                // CRITICAL FIX: Update local data immediately and re-render
+                allMaterials = allMaterials.filter(material => material.id !== materialId);
+                userVotedMaterials.delete(materialId); 
+                renderMaterials();
+                fetchContributionCount(); // Decrement contribution score
+
+            } catch (error) {
+                console.error("Error deleting material:", error);
+                showNotification('Failed to delete material. Check RLS DELETE policy.', 'error');
+            }
+        }
+
+        // NEW: Function to render active filter tags
+        function renderActiveFilters() {
+            activeFiltersDiv.innerHTML = '';
+            
+            const searchTerm = searchInput.value.trim();
+            const branchValue = branchFilter.value;
+            const semesterValue = semesterFilter.value;
+            
+            // Check if we are filtering by uploader ID (when a search is active and it's an ID)
+            const isUploaderFilterTerm = searchTerm.startsWith('uploader:');
+            let uploaderIdToFilter = isUploaderFilterTerm ? searchTerm.split(':')[1] : null;
+
+
+            const tags = [];
+
+            if (searchTerm && !isUploaderFilterTerm) {
+                tags.push({ label: `Search: ${searchTerm}`, type: 'search' });
+            }
+
+            if (uploaderIdToFilter) {
+                // Find the name of the uploader whose ID we're filtering by
+                const uploaderName = allMaterials.find(m => m.uploaderId === uploaderIdToFilter)?.uploaderName || 'User';
+                tags.push({ label: `Uploader: ${uploaderName}`, type: 'uploader' });
+            }
+
+            if (branchValue) {
+                // FIX: Use BRANCH_MAP to display full branch name in the tag
+                tags.push({ label: `Branch: ${BRANCH_MAP[branchValue] || branchValue}`, type: 'branch', value: branchValue });
+            }
+
+            if (semesterValue) {
+                tags.push({ label: `Semester: ${SEMESTER_MAP[semesterValue] || semesterValue}`, type: 'semester', value: semesterValue });
+            }
+
+            if (tags.length === 0) {
+                 activeFiltersDiv.innerHTML = `<span class="italic text-gray-400">No active filters.</span>`;
+                 return;
+            }
+
+
+            tags.forEach(tag => {
+                const tagElement = document.createElement('span');
+                tagElement.className = 'inline-flex items-center bg-indigo-100 text-indigo-800 text-xs font-medium px-3 py-1 rounded-full cursor-pointer hover:bg-indigo-200 transition mb-1 mr-2';
+                
+                tagElement.innerHTML = `${tag.label} 
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                    </svg>`;
+                
+                tagElement.onclick = () => {
+                    if (tag.type === 'branch') branchFilter.value = '';
+                    if (tag.type === 'semester') semesterFilter.value = '';
+                    if (tag.type === 'search' || tag.type === 'uploader') searchInput.value = '';
+                    renderMaterials();
+                };
+                
+                activeFiltersDiv.appendChild(tagElement);
+            });
+        }
+
+
+        // --- RENDERING & UI FUNCTIONS (Filters and Card Generation) ---
+        
+        function showNoMaterials() {
+            materialList.innerHTML = '';
+            noMaterialsDiv.classList.remove('hidden');
+            
+            if (!currentUser) { 
+                 noMaterialsDiv.innerHTML = `<p class="text-xl font-medium text-gray-500">Please log in to view study materials.</p>`;
+                 return;
+            }
+
+            // Define the condition for showing the 'Ready to Discover?' prompt
+            const isFilterOrSearchActive = searchInput.value.trim() || branchFilter.value || semesterFilter.value;
+
+            if (!isDataLoaded) {
+                 if (isFilterOrSearchActive || currentView === 'my_uploads') {
+                     // If any filter/search/MyUploads is active, load the data
+                     loadAndSyncMaterials(); 
+                     loadingSpinner.classList.remove('hidden');
+                     return; 
+                 }
+                 // If data is NOT loaded and no filters/search are active (in All Materials view)
+                 materialList.innerHTML = '';
+                 noMaterialsDiv.innerHTML = `<h2 class="text-2xl font-bold text-indigo-600 mb-2">Ready to Discover?</h2>
+                 <p class="text-xl font-medium text-gray-500">Use the search bar and filters above to find study materials.</p>`;
+                 return;
+            }
+
+            if (currentView === 'my_uploads') {
+                 noMaterialsDiv.innerHTML = `<p class="text-xl font-medium text-gray-500">You haven't shared any materials yet.</p>
+                 <button onclick="document.getElementById('open-upload-modal-btn').click()" class="mt-4 bg-indigo-600 text-white px-6 py-3 rounded-lg font-semibold hover:bg-indigo-700 transition">Share Your First Link</button>`;
+            } else {
+                 noMaterialsDiv.innerHTML = `<p class="text-xl font-medium text-gray-500">No materials matched your search or filters.</p>`;
+            }
+        }
+        
+        const debouncedRenderMaterials = debounce(renderMaterials, 300);
+        
+        function renderMaterials() {
+            if (!currentUser) {
+                materialList.innerHTML = '';
+                showNoMaterials(); 
+                return; 
+            }
+            
+            const searchTerm = searchInput.value.toLowerCase().trim();
+            const selectedBranch = branchFilter.value;
+            const selectedSemester = semesterFilter.value;
+            const sortOrder = sortFilter.value; 
+            
+            const isUploaderFilterTerm = searchTerm.startsWith('uploader:');
+            let uploaderIdToFilter = isUploaderFilterTerm ? searchTerm.split(':')[1] : null;
+
+
+            // --- INITIAL LOAD/SEARCH TRIGGER ---
+            const isFilterOrSearchActive = searchTerm || selectedBranch || selectedSemester;
+
+            if (!isDataLoaded) {
+                 if (isFilterOrSearchActive || currentView === 'my_uploads') {
+                     // If any filter/search/MyUploads is active, load the data
+                     loadAndSyncMaterials(); 
+                     loadingSpinner.classList.remove('hidden');
+                     return; 
+                 }
+                 // If data is NOT loaded and no filters/search are active (in All Materials view)
+                 materialList.innerHTML = '';
+                 showNoMaterials();
+                 return;
+            }
+            // --- END NEW LOAD TRIGGER ---
+
+            renderActiveFilters();
+
+            // CRITICAL FIX: If data is loaded, and we are in All Materials view, AND no filters are active, show "Ready to Discover?" prompt.
+            if (currentView === 'all_materials' && !isFilterOrSearchActive) {
+                materialList.innerHTML = '';
+                showNoMaterials();
+                return;
+            }
+            
+            let filteredMaterials = allMaterials.filter(material => {
+                
+                // If filtering by uploader ID
+                if (uploaderIdToFilter) {
+                    return material.uploaderId === uploaderIdToFilter && 
+                           (!selectedBranch || material.branch === selectedBranch) &&
+                           (!selectedSemester || String(material.semester) === selectedSemester);
+                }
+
+                // Otherwise, perform regular text search
+                const matchesSearch = !searchTerm || 
+                    material.subject.toLowerCase().includes(searchTerm) || 
+                    material.fileName.toLowerCase().includes(searchTerm) ||
+                    (BRANCH_MAP[material.branch] && BRANCH_MAP[material.branch].toLowerCase().includes(searchTerm)) ||
+                    (SEMESTER_MAP[String(material.semester)] && SEMESTER_MAP[String(material.semester)].toLowerCase().includes(searchTerm));
+                    
+                const matchesBranch = !selectedBranch || material.branch === selectedBranch;
+                const matchesSemester = !selectedSemester || String(material.semester) === selectedSemester;
+                return matchesSearch && matchesBranch && matchesSemester;
+            });
+            
+            // CRITICAL FIX: Filtering for My Uploads view
+            if (currentView === 'my_uploads' && currentUser) {
+                 // Clear search/filters display (already cleared inputs above)
+                 activeFiltersDiv.innerHTML = `<span class="italic text-gray-400">Showing only your contributions.</span>`;
+                 filteredMaterials = filteredMaterials.filter(material => material.uploaderId === currentUser.id);
+            }
+
+            // Apply Sorting
+            filteredMaterials.sort((a, b) => {
+                if (sortOrder === 'created_at') {
+                    return b.createdAt.getTime() - a.createdAt.getTime();
+                } else if (sortOrder === 'download_count') {
+                    return b.downloadCount - a.downloadCount;
+                } else if (sortOrder === 'upvotes') {
+                    return b.upvotes - a.upvotes;
+                }
+                return 0;
+            });
+
+            materialList.innerHTML = '';
+            
+            if (filteredMaterials.length === 0) {
+                noMaterialsDiv.classList.remove('hidden');
+                showNoMaterials();
+            } else {
+                noMaterialsDiv.classList.add('hidden');
+                filteredMaterials.forEach(material => {
+                    // Pass the original non-ID search term for highlighting
+                    const termForHighlight = isUploaderFilterTerm ? null : searchTerm;
+                    const card = createMaterialCard(material, termForHighlight); 
+                    materialList.appendChild(card);
+                });
+            }
+        }
+        
+        function createMaterialCard(material, searchTerm) {
+            const card = document.createElement('div');
+            // UPDATED: Added card-shadow class for new visual theme
+            card.className = 'bg-white rounded-xl shadow-lg overflow-hidden flex flex-col h-full card-shadow';
+            
+            let iconColor = 'text-green-500';
+            let iconSvg = `<path fill-rule="evenodd" d="M12 2C6.477 2 2 6.477 2 12s4.477 10 10 10 10-4.477 10-10S17.523 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" clip-rule="evenodd" />`; 
+
+            if (material.downloadURL.includes('drive.google.com')) {
+                iconColor = 'text-blue-500';
+                iconSvg = `<path d="M10 2.5a.5.5 0 01.5.5v4.207l1.646-1.646a.5.5 0 11.708.708l-2.5 2.5a.5.5 0 01-.708 0l-2.5-2.5a.5.5 0 01.708-.708L9.5 7.207V3a.5.5 0 01.5-.5zM4 12a1 1 0 011-1h10a1 1 0 011 1v6a1 1 0 01-1 1H5a1 1 0 01-1-1v-6z" clip-rule="evenodd" fill-rule="evenodd"/>`;
+            } else if (material.downloadURL.includes('onedrive.live.com')) {
+                iconColor = 'text-indigo-500';
+                 iconSvg = `<path d="M12 2a.5.5 0 01.5.5v6.5a.5.5 0 01-1 0V3a.5.5 0 01.5-.5zM16 11H8a.5.5 0 00-.5.5v6a.5.5 0 00.5.5h8a.5.5 0 00.5-.5v-6a.5.5 0 00-.5-.5z" fill-rule="evenodd" clip-rule="evenodd"/>`;
+            }
+
+            const creationDate = material.createdAt ? 
+                material.createdAt.toLocaleDateString('en-US', { 
+                    year: 'numeric', 
+                    month: 'short', 
+                    day: 'numeric' 
+                }) : 'Recently';
+            
+            const uploaderName = material.uploaderName || 'Anonymous';
+            
+            const isOwner = currentUser && material.uploaderId === currentUser.id;
+            const hasVoted = userVotedMaterials.has(material.id);
+            const upvoteBtnClass = hasVoted ? 'voted' : 'bg-gray-200 text-gray-600';
+            const upvoteBtnDisabled = hasVoted || isOwner ? 'disabled' : '';
+            
+            // NEW: Apply search term highlighting only if it's a regular search term
+            const highlightedSubject = searchTerm ? highlightText(material.subject, searchTerm) : material.subject;
+
+            card.innerHTML = `
+                <div class="p-5 flex-grow">
+                    <div class="flex items-start justify-between mb-4">
+                        <div class="flex items-start space-x-3">
+                            <div class="flex-shrink-0 w-12 h-12 bg-indigo-50 border-indigo-200 border rounded-lg flex items-center justify-center shadow-inner">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 ${iconColor}" viewBox="0 0 20 20" fill="currentColor">
+                                    ${iconSvg}
+                                </svg>
+                            </div>
+                            <div class="flex-1 min-w-0">
+                                <div class="flex items-center space-x-2 mb-1">
+                                    <span class="px-2 py-0.5 bg-indigo-100 text-indigo-700 text-xs font-semibold rounded-full">${material.branch}</span>
+                                    <span class="px-2 py-0.5 bg-gray-100 text-gray-700 text-xs font-medium rounded-full">Sem ${material.semester}</span>
+                                </div>
+                                <h3 class="text-xl font-extrabold text-gray-900 leading-tight truncate" title="${material.subject}">${highlightedSubject}</h3>
+                                <p class="text-sm text-gray-500 truncate mt-1" title="${material.downloadURL}">Link Shared</p>
+                            </div>
+                        </div>
+                        
+                        <!-- Report Button -->
+                        ${!isOwner ? `
+                        <button class="report-btn text-gray-400 hover:text-red-500 transition ml-2 p-1 rounded-full hover:bg-red-50" 
+                                data-material-id="${material.id}" 
+                                data-uploader-name="${uploaderName}"
+                                data-subject="${material.subject}"
+                                aria-label="Report this material">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.3 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </button>
+                        ` : ''}
+                    </div>
+
+                    <div class="flex items-center justify-between text-xs text-gray-500 mt-3 pt-3 border-t border-gray-100">
+                        <!-- NEW: Uploader Name is now clickable -->
+                        <button onclick="filterByUploaderId('${material.uploaderId}')" class="uploader-link truncate text-indigo-600 hover:text-indigo-800 hover:underline cursor-pointer" aria-label="View all materials uploaded by ${uploaderName}">
+                            👤 ${uploaderName} ${isOwner ? '(You)' : ''}
+                        </button>
+                        <span class="flex-shrink-0">📅 ${creationDate}</span>
+                    </div>
+                </div>
+                <!-- Card Footer (Optimized for Mobile) -->
+                <div class="bg-gray-50 p-4 border-t border-gray-100 flex space-x-2">
+                    <button class="upvote-btn flex items-center justify-center font-semibold p-2 sm:p-3 rounded-lg transition text-sm flex-shrink-0 shadow-inner ${upvoteBtnClass}" 
+                            data-material-id="${material.id}" 
+                            aria-label="Upvote this material: current votes ${material.upvotes}"
+                            ${upvoteBtnDisabled}>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M5 15l7-7 7 7" />
+                        </svg>
+                        <span class="font-bold">${material.upvotes || 0}</span>
+                    </button>
+                    <a href="${material.downloadURL}" target="_blank" rel="noopener noreferrer"
+                       class="download-btn flex-1 flex items-center justify-center bg-indigo-600 text-white font-extrabold py-2 px-3 sm:py-3 sm:px-4 rounded-lg shadow-lg hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition text-sm"
+                       aria-label="Download ${material.subject}">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 sm:h-5 sm:w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                             <path stroke-linecap="round" stroke-linejoin="round" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span class="hidden md:inline">Download</span> <span class="font-bold">(${material.downloadCount || 0})</span>
+                    </a>
+                    ${isOwner ? `
+                        <button class="delete-btn flex-shrink-0 bg-red-500 text-white p-2 sm:p-3 rounded-lg shadow-md hover:bg-red-600 transition" 
+                                data-material-id="${material.id}" 
+                                aria-label="Delete your material: ${material.subject}">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                 <path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </button>
+                    ` : ''}
+                </div>
+            `;
+            
+            card.querySelector('.download-btn').addEventListener('click', () => {
+                incrementDownloadCount(material.id);
+            });
+            
+            const upvoteButton = card.querySelector('.upvote-btn');
+            if (upvoteButton && !hasVoted && !isOwner) {
+                upvoteButton.addEventListener('click', () => {
+                    incrementUpvotes(material.id);
+                });
+            } else if (upvoteButton) {
+                upvoteButton.disabled = true;
+            }
+            
+            if (isOwner) {
+                card.querySelector('.delete-btn').addEventListener('click', (e) => {
+                    const materialId = e.currentTarget.getAttribute('data-material-id');
+                    // FIX: Call deleteMaterial directly instead of using window.confirm
+                    deleteMaterial(materialId);
+                });
+            } else {
+                 const reportButton = card.querySelector('.report-btn');
+                 if(reportButton) {
+                      reportButton.addEventListener('click', (e) => {
+                          const materialId = e.currentTarget.getAttribute('data-material-id');
+                          const uploaderName = e.currentTarget.getAttribute('data-uploader-name');
+                          const subject = e.currentTarget.getAttribute('data-subject');
+                          reportMaterial(materialId, uploaderName, subject);
+                      });
+                 }
+            }
+            
+            return card;
+        }
+
+        // --- EVENT LISTENERS ---
+        // Debounced input ensures we don't spam the render function while typing
+        searchInput.addEventListener('input', debouncedRenderMaterials); 
+        searchButton.addEventListener('click', renderMaterials);
+        
+        branchFilter.addEventListener('change', renderMaterials);
+        semesterFilter.addEventListener('change', renderMaterials);
+        sortFilter.addEventListener('change', renderMaterials); 
+        
+        viewAllBtn.addEventListener('click', () => setView('all_materials'));
+        viewMyUploadsBtn.addEventListener('click', () => setView('my_uploads'));
+        
+        openUploadModalBtn.addEventListener('click', () => {
+             if (currentUser) {
+                 uploadForm.reset();
+                 uploadErrorDiv.classList.add('hidden');
+                 openModal(uploadModal);
+             } else {
+                 setupAuthModal(true); 
+                 openModal(authModal);
+                 showNotification('Please log in to share materials', 'info');
+             }
+        });
+        
+        closeAuthModalBtn.addEventListener('click', () => closeModal(authModal));
+        closeUploadModalBtn.addEventListener('click', () => closeModal(uploadModal));
+        
+        [authModal, uploadModal].forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if(e.target === modal) closeModal(modal);
+            });
+        });
+
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeModal(authModal);
+                closeModal(uploadModal);
+            }
+        });
+
+        // --- INITIALIZATION ---
+        async function initApp() {
+            if (supabase) {
+                supabase.auth.onAuthStateChange((event, session) => {
+                    updateAuthState();
+                });
+                
+                await updateAuthState();
+                updateViewUI();
+                // Removed redundant initial welcome notification
+            }
+        }
+
+        // Start the app
+        initApp();
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (supabaseChannel) {
+                supabase.removeChannel(supabaseChannel);
+            }
+        });
+
+        console.log('🌟 SVREC Materials Hub is ready! Happy studying! 📚');
+    </script>
+</body>
+</html>
